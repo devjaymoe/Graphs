@@ -98,7 +98,7 @@ class Graph:
             # Dequeue the first PATH
             path = q.dequeue()
             # Grab the last vertex from the PATH
-            last_vert = path[len(path) - 1]
+            last_vert = path[-1]
 
             # If that vertex has not been visited...
             if last_vert not in visited:

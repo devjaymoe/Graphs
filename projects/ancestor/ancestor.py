@@ -1,4 +1,3 @@
-
 def earliest_ancestor(ancestors, starting_node):
     # check if node is in ancestors data and pull it out of it
     found_node = None

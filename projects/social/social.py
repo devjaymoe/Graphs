@@ -100,10 +100,20 @@ class SocialGraph:
 
         return visited
 
-
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populate_graph(100, 10)
-    print(sg.friendships)
-    connections = sg.get_all_social_paths(1)
-    print(connections)
+    sg.populate_graph(1000, 5)
+    # print('Friendships: ', sg.friendships)
+    # connections = sg.get_all_social_paths(1)
+    # print(connections)
+
+    accum = 0
+    for friend in sg.friendships:
+        connects = sg.get_all_social_paths(friend)
+        # print(f'{friend}\'s connections: {connects}')
+        accum += len(connects)
+
+    accum //= len(sg.friendships)
+    print('Average length of connections: ', accum)
+    print('precent of conections?: ', accum / len(sg.friendships))
+    

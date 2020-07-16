@@ -31,53 +31,64 @@ traversal_path = []
 traversal_graph = {}
 direction_switcher = { 'n': 's', 's': 'n', 'e': 'w', 'w': 'e' }
 
-stack = []
-room_exits = player.current_room.get_exits()
-random_room_direction = random.choice(room_exits)
-stack.append(random_room_direction)
+def make_graph_entry(room):
+    traversal_graph[room] = []
+    traversal_graph[room].append(False)
+    traversal_graph[room].append({})
+
+def find_unkown_direction(direction_dict):
+    for key, val in direction_dict.items():
+        if val == '?':
+            return key
+    return True
 
 # build out inital room
-traversal_graph[player.current_room.id] = {}
-for room_exit in room_exits:
-    traversal_graph[player.current_room.id][room_exit] = '?'
+room_exits = player.current_room.get_exits()
+make_graph_entry(player.current_room.id)
 
+for room_exit in room_exits:
+    traversal_graph[player.current_room.id][1][room_exit] = '?'
+
+stack = []
+stack.append(player.current_room.id)
 # THIS TAKES ME DOWN A PATH UNTIL I REACH A POINT WHERE THERE ARE NO UNKOWN ROOMS
 while len(stack) > 0:
-    # the current direction being traveled
-    current_direction = stack.pop()
+    # the current room being traveled
+    current_room = stack.pop()
     # reference to the previous room
-    previous_room = player.current_room.id
-    # traveling in the direction
-    player.travel(current_direction)
-    # current room id
-    current_room = player.current_room.id
-    print(current_room)
+    previous_room = current_room
     # all of the exits from this room in an array
     room_exits = player.current_room.get_exits()
-
-    # fill out the known values in the traversal graph
-    traversal_graph[previous_room][current_direction] = current_room
+    # pick a random direction to go in
+    random_room_direction = random.choice(room_exits)
+    # traveling in the direction
+    player.travel(random_room_direction)
+    # new current room id
+    current_room = player.current_room.id
+    # new exits
+    room_exits = player.current_room.get_exits()
 
     # place current room in traversal graph
     if current_room not in traversal_graph:
-        traversal_graph[current_room] = {}
+        make_graph_entry(current_room)
 
         # place room in graph and give it all the exits
         for room_exit in room_exits:
-            traversal_graph[current_room][room_exit] = '?'
-    
-    # getting the opposite direction from the one we came from
-    reverse_direction = direction_switcher[current_direction]
-    # placing that value in the graph of known directions
-    traversal_graph[current_room][reverse_direction] = previous_room
+            traversal_graph[current_room][1][room_exit] = '?'
 
-    # in the current room, find a direction that has not been traveled
-    for direction in traversal_graph[current_room]:
-        if traversal_graph[current_room][direction] == '?':
-            # go in that direction
-            stack.append(direction)
+    # fill out the known values in the traversal graph
+    traversal_graph[previous_room][1][random_room_direction] = current_room
+    # getting the opposite direction from the one we came from
+    reverse_direction = direction_switcher[random_room_direction]
+    # placing that value in the graph of known directions
+    traversal_graph[current_room][1][reverse_direction] = previous_room
+
+    print(find_unkown_direction(traversal_graph[current_room][1]))
+
 
 print('Traversal Graph:', traversal_graph)
+
+
 
 # TRAVERSAL TEST
 visited_rooms = set()

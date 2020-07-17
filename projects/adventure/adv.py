@@ -11,9 +11,9 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
+# map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
-# map_file = "maps/test_loop_fork.txt"
+map_file = "maps/test_loop_fork.txt"
 # map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
@@ -29,66 +29,127 @@ player = Player(world.starting_room)
 # traversal_path = ['n', 'n']
 traversal_path = []
 traversal_graph = {}
-direction_switcher = { 'n': 's', 's': 'n', 'e': 'w', 'w': 'e' }
+flag_path = []
+direction_switcher = {'n': 's', 's': 'n', 'e': 'w', 'w': 'e'}
 
-def make_graph_entry(room):
-    traversal_graph[room] = []
-    traversal_graph[room].append(False)
-    traversal_graph[room].append({})
+# helper function to find the direction that hasn't been traveled
+def find_untraveled_path(direction_dict):
+    for k, v, in direction_dict.items():
+        if v == "?":
+            return k
+    # return true if no path is untraveled
+    return False
 
-def find_unkown_direction(direction_dict):
-    for key, val in direction_dict.items():
-        if val == '?':
-            return key
+def graph_completed_check(traversal_graph):
+    for k in traversal_graph:
+        if traversal_graph[k]['completed'] == False:
+            return False
     return True
 
-# build out inital room
-room_exits = player.current_room.get_exits()
-make_graph_entry(player.current_room.id)
-
-for room_exit in room_exits:
-    traversal_graph[player.current_room.id][1][room_exit] = '?'
+def room_completed_check(room):
+    for key, value in traversal_graph[room].items():
+        if value == '?':
+            traversal_graph[room]['completed'] = False
+            return False
+        else:
+            traversal_graph[room]['completed'] = True
+    return True
 
 stack = []
-stack.append(player.current_room.id)
-# THIS TAKES ME DOWN A PATH UNTIL I REACH A POINT WHERE THERE ARE NO UNKOWN ROOMS
+room_exits = player.current_room.get_exits()
+random_room_direction = random.choice(room_exits)
+stack.append(random_room_direction)
+
+# build out inital room
+traversal_graph[player.current_room.id] = {}
+for room_exit in room_exits:
+    traversal_graph[player.current_room.id][room_exit] = '?'
+traversal_graph[player.current_room.id]['completed'] = False
+
 while len(stack) > 0:
-    # the current room being traveled
-    current_room = stack.pop()
+    print('Current Room: ', player.current_room.id, 'Current Direction: ', stack[-1])
+    # print(player.current_room.id)
+    # the current direction being traveled
+    current_direction = stack.pop()
     # reference to the previous room
-    previous_room = current_room
+    previous_room = player.current_room.id
+    # traveling in the direction
+    player.travel(current_direction)
+    # add to flag path to turn around when needed
+    flag_path.append(current_direction)
+    print('Stack: ', stack)
+    print('flag path: ', flag_path)
+    # add to travel path to keep track of all steps
+    traversal_path.append(current_direction)
+    # current room id
+    current_room = player.current_room.id
+    # print(current_room)
     # all of the exits from this room in an array
     room_exits = player.current_room.get_exits()
-    # pick a random direction to go in
-    random_room_direction = random.choice(room_exits)
-    # traveling in the direction
-    player.travel(random_room_direction)
-    # new current room id
-    current_room = player.current_room.id
-    # new exits
-    room_exits = player.current_room.get_exits()
+
+    # fill out the known values in the traversal graph
+    traversal_graph[previous_room][current_direction] = current_room
 
     # place current room in traversal graph
     if current_room not in traversal_graph:
-        make_graph_entry(current_room)
+        traversal_graph[current_room] = {}
 
         # place room in graph and give it all the exits
         for room_exit in room_exits:
-            traversal_graph[current_room][1][room_exit] = '?'
+            traversal_graph[current_room][room_exit] = '?'
+        
+        traversal_graph[current_room]['completed'] = False
 
-    # fill out the known values in the traversal graph
-    traversal_graph[previous_room][1][random_room_direction] = current_room
-    # getting the opposite direction from the one we came from
-    reverse_direction = direction_switcher[random_room_direction]
-    # placing that value in the graph of known directions
-    traversal_graph[current_room][1][reverse_direction] = previous_room
+    # direction switcher
+    previous_direction = direction_switcher[current_direction]
+    traversal_graph[current_room][previous_direction] = previous_room
 
-    print(find_unkown_direction(traversal_graph[current_room][1]))
+    # check if room has been completely searched
+    cur_room_complete = room_completed_check(current_room)
+    prev_room_complete = room_completed_check(previous_room)
 
+    if graph_completed_check(traversal_graph) is True:
+        break
+    
+    # in the current room, find a direction that has not been traveled
+    untraveled_path = find_untraveled_path(traversal_graph[current_room])
 
+    if untraveled_path is False:
+        # this section will also be hit when retracing our steps
+        if len(stack) == 0:
+            # reverses path once hitting a dead end and attaches entire path to stack
+            for i in range(len(flag_path)):
+                flag_path[i] = direction_switcher[flag_path[i]]
+            for x in flag_path:
+                stack.insert(0, x)
+            flag_path = []
+        # if the stack is greater than 1 then we are in the process of retracing our steps
+        # but we have made a diversion and we've reached a dead end
+        elif len(stack) > 0 and len(flag_path) > len(stack):
+            for i in range(len(stack)):
+                flag_path.pop(i)
+            for i in range(len(flag_path)):
+                flag_path[i] = direction_switcher[flag_path[i]]
+            for x in flag_path:
+                stack.insert(0, x)
+            flag_path = []
+    else:
+        # I've hit a room with an untraveled path
+        # if the previous room is completed then we dont need to go that way again
+        # and can reset our flag path
+        if prev_room_complete is True and len(stack) == 0:
+            flag_path = []
+            stack.append(untraveled_path)
+        # elif prev_room_complete is True and len(stack) > 0:
+        #     # we will hit this case when we need to trace our steps still
+        #     # but we are going in a direction that has been untraveled
+        #     stack.append(untraveled_path)
+        else:
+            stack.append(untraveled_path)
+
+# print(graph_completed_check(traversal_graph))
+# print(flag_path)
 print('Traversal Graph:', traversal_graph)
-
-
 
 # TRAVERSAL TEST
 visited_rooms = set()

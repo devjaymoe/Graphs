@@ -67,23 +67,16 @@ for room_exit in room_exits:
 traversal_graph[player.current_room.id]['completed'] = False
 
 while graph_completed_check(traversal_graph) == False:
-    # print('Current Room: ', player.current_room.id, 'Current Direction: ', stack[-1])
-    # print(player.current_room.id)
     # the current direction being traveled
     current_direction = stack[-1]
     # reference to the previous room
     previous_room = player.current_room.id
     # traveling in the direction
     player.travel(current_direction)
-    # add to flag path to turn around when needed
-    # flag_path.append(current_direction)
-    # print('Stack: ', stack)
-    # print('flag path: ', flag_path)
     # add to travel path to keep track of all steps
     traversal_path.append(current_direction)
     # current room id
     current_room = player.current_room.id
-    # print(current_room)
     # all of the exits from this room in an array
     room_exits = player.current_room.get_exits()
 
@@ -115,51 +108,24 @@ while graph_completed_check(traversal_graph) == False:
     untraveled_path = find_untraveled_path(traversal_graph[current_room])
 
     if untraveled_path is False:
-        # this section will also be hit when retracing our steps
-        # last_direction_travled = stack.pop()
-        # direction_flipped = direction_switcher[last_direction_travled]
-        # player.travel(direction_flipped)
-        # print('before while loop', current_room)
+
         while untraveled_path is False:
+
             last_direction_travled = stack.pop()
             direction_flipped = direction_switcher[last_direction_travled]
+
             player.travel(direction_flipped)
             current_room = player.current_room.id
+
             traversal_path.append(direction_flipped)
-            # print('Current Room in UP: ', current_room)
             untraveled_path = find_untraveled_path(traversal_graph[current_room])
+
         stack.append(untraveled_path)
 
-        # if len(stack) == 0:
-        #     # reverses path once hitting a dead end and attaches entire path to stack
-        #     # for i in range(len(flag_path)):
-        #     #     flag_path[i] = direction_switcher[flag_path[i]]
-        #     # for x in flag_path:
-        #     #     stack.insert(0, x)
-        #     # flag_path = []
-        # # if the stack is greater than 1 then we are in the process of retracing our steps
-        # # but we have made a diversion and we've reached a dead end
-        # elif len(stack) > 0 and len(flag_path) > len(stack):
-        #     # if 
-        #     for i in range(len(stack)):
-        #         flag_path.pop(i)
-        #     for i in range(len(flag_path)):
-        #         flag_path[i] = direction_switcher[flag_path[i]]
-        #     for x in flag_path:
-        #         stack.insert(0, x)
-        #     flag_path = []
     else:
-        # I've hit a room with an untraveled path
-        # if the previous room is completed then we dont need to go that way again
-        # and can reset our flag path
-        # if prev_room_complete is True and len(stack) == 0:
-        #     # flag_path = []
-        #     stack.append(untraveled_path)
-        # else:
+
         stack.append(untraveled_path)
 
-# print(graph_completed_check(traversal_graph))
-# print(flag_path)
 # print('Traversal Graph:', traversal_graph)
 
 # TRAVERSAL TEST
